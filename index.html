@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>沖縄商品インタラクティブカタログ</title>
+  <style>
+    :root {
+      --blue: #007c9d;
+      --blue-dark: #005d75;
+      --yellow: #ffd166;
+      --sun: #ffb703;
+      --coral: #f26b5b;
+      --ink: #17333a;
+      --muted: #63777c;
+      --paper: #fffdf7;
+      --line: #dce7e7;
+      --row: #f7fbfa;
+      --shadow: 0 18px 44px rgba(22, 62, 68, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(0,124,157,.14), rgba(255,253,247,.98) 330px),
+        var(--paper);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 253, 247, .95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(0, 124, 157, .16);
+    }
+    .wrap { width: min(1280px, calc(100% - 28px)); margin: 0 auto; }
+    .hero { padding: 22px 0 16px; display: grid; gap: 14px; }
+    .title-row { display: flex; justify-content: space-between; gap: 16px; align-items: end; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: clamp(24px, 4vw, 40px); line-height: 1.12; letter-spacing: 0; }
+    .lead { margin: 7px 0 0; color: var(--muted); font-size: 14px; }
+    .stats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .stat { border: 1px solid rgba(0,124,157,.22); background: #fff; border-radius: 8px; padding: 8px 12px; min-width: 94px; }
+    .stat strong { display: block; font-size: 20px; color: var(--blue-dark); }
+    .stat span { font-size: 11px; color: var(--muted); }
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 160px auto;
+      gap: 10px;
+      align-items: center;
+    }
+    select, button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      min-height: 44px;
+      padding: 0 12px;
+      font: inherit;
+      outline: none;
+    }
+    select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,124,157,.16); }
+    button { cursor: pointer; font-weight: 700; }
+    main { padding: 16px 0 40px; }
+    .filter-band { padding: 10px 0 14px; }
+    .filter-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip input { position: absolute; opacity: 0; pointer-events: none; }
+    .chip span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      border: 1px solid rgba(0,124,157,.25);
+      border-radius: 999px;
+      padding: 0 12px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      transition: .16s ease;
+    }
+    .chip input:checked + span {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+      box-shadow: 0 6px 18px rgba(0,124,157,.22);
+    }
+    .result-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 2px 0 12px; color: var(--muted); font-size: 13px; }
+    .table-shell {
+      overflow: auto;
+      max-height: calc(100vh - 260px);
+      border: 1px solid rgba(0,124,157,.16);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 14px;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--blue-dark);
+      color: #fff;
+      text-align: left;
+      padding: 11px 12px;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+    tbody td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      background: #fff;
+    }
+    tbody tr:nth-child(even) td { background: var(--row); }
+    tbody tr:hover td { background: #fff8df; }
+    tbody tr { cursor: pointer; }
+    .name-cell { min-width: 380px; line-height: 1.5; font-weight: 700; }
+    .vendor-cell { min-width: 190px; color: var(--muted); }
+    .category-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(0,124,157,.1);
+      color: var(--blue-dark);
+      font-weight: 700;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .margin { color: var(--coral); font-weight: 900; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--sun), var(--yellow));
+      color: #563700;
+      font-weight: 900;
+      white-space: nowrap;
+      box-shadow: 0 6px 14px rgba(255,183,3,.24);
+    }
+    .image-link {
+      border-color: rgba(0,124,157,.26);
+      min-height: 34px;
+      padding: 0 10px;
+      color: var(--blue-dark);
+      font-size: 13px;
+    }
+    .empty {
+      display: none;
+      text-align: center;
+      padding: 42px 14px;
+      color: var(--muted);
+      border: 1px dashed rgba(0,124,157,.35);
+      border-radius: 8px;
+      background: rgba(255,255,255,.7);
+    }
+    dialog {
+      width: min(920px, calc(100% - 24px));
+      border: 0;
+      border-radius: 8px;
+      padding: 0;
+      box-shadow: 0 30px 80px rgba(23, 51, 58, .28);
+      background: #fff;
+    }
+    dialog::backdrop { background: rgba(13, 38, 45, .48); }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .modal-title { margin: 0; font-size: 16px; line-height: 1.4; }
+    .modal-close { min-height: 36px; }
+    .modal-body { padding: 14px; }
+    .modal-body img {
+      display: block;
+      width: 100%;
+      max-height: 72vh;
+      object-fit: contain;
+      background: #f4f7f7;
+      border-radius: 8px;
+    }
+    @media (max-width: 1024px) {
+      .wrap { width: min(100% - 22px, 960px); }
+      .hero { padding: 18px 0 14px; }
+      .controls { grid-template-columns: minmax(210px, 1fr) 150px auto; }
+      .table-shell { max-height: calc(100vh - 245px); }
+      table { min-width: 900px; font-size: 13px; }
+      thead th, tbody td { padding: 9px 10px; }
+      .name-cell { min-width: 320px; }
+      .vendor-cell { min-width: 160px; }
+    }
+    @media (max-width: 760px) {
+      body { background: linear-gradient(180deg, rgba(0,124,157,.16), rgba(255,253,247,.98) 260px), var(--paper); }
+      header { position: static; }
+      .wrap { width: min(100% - 18px, 560px); }
+      .hero { padding: 16px 0 12px; gap: 12px; }
+      .title-row { align-items: flex-start; }
+      h1 { font-size: 24px; }
+      .lead { font-size: 13px; line-height: 1.55; }
+      .controls { grid-template-columns: 1fr; gap: 8px; }
+      .controls button { grid-column: 1 / -1; }
+      select, button { min-height: 42px; font-size: 14px; }
+      .stats { width: 100%; gap: 6px; }
+      .stat { flex: 1; min-width: 0; padding: 7px 9px; }
+      .stat strong { font-size: 18px; }
+      main { padding-top: 10px; }
+      .filter-band { padding: 8px 0 12px; }
+      .filters { gap: 6px; max-height: 96px; overflow: auto; padding-bottom: 2px; }
+      .chip span { min-height: 32px; padding: 0 10px; font-size: 12px; }
+      .result-line { align-items: flex-start; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+      .table-shell { overflow: visible; max-height: none; border: 0; background: transparent; box-shadow: none; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      table { min-width: 0; border-collapse: collapse; font-size: 14px; }
+      thead { display: none; }
+      tbody { display: grid; gap: 10px; }
+      tbody tr {
+        position: relative;
+        background: #fff;
+        border: 1px solid rgba(0,124,157,.16);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(22,62,68,.1);
+        padding: 11px 12px;
+      }
+      tbody tr:nth-child(even) td, tbody td { background: transparent; }
+      tbody tr:hover td { background: transparent; }
+      tbody td { border-bottom: 0; padding: 0; }
+      .name-cell { min-width: 0; font-size: 14px; line-height: 1.55; margin-bottom: 7px; padding-right: 84px; }
+      .vendor-cell { min-width: 0; color: var(--muted); font-size: 12px; margin-bottom: 8px; padding-right: 84px; }
+      td:nth-child(3) { margin-bottom: 8px; }
+      td:nth-child(4), td:nth-child(5), td:nth-child(6) {
+        display: grid;
+        grid-template-columns: 88px 1fr;
+        gap: 8px;
+        text-align: left;
+        font-variant-numeric: tabular-nums;
+        padding: 5px 0;
+        border-top: 1px solid rgba(220,231,231,.72);
+      }
+      td:nth-child(4)::before { content: "\5378\4fa1\683c"; color: var(--muted); font-size: 12px; }
+      td:nth-child(5)::before { content: "\53c2\8003\4e0a\4ee3"; color: var(--muted); font-size: 12px; }
+      td:nth-child(6)::before { content: "\5229\5e45"; color: var(--muted); font-size: 12px; }
+      td:nth-child(7) { position: absolute; top: 12px; right: 12px; width: auto; }
+      td:nth-child(8) { margin-top: 9px; }
+      .image-link { width: 100%; min-height: 40px; background: rgba(0,124,157,.08); }
+      .badge { min-height: 24px; padding: 0 8px; font-size: 12px; }
+      dialog { width: min(100% - 16px, 560px); }
+      .modal-head { padding: 10px 12px; }
+      .modal-title { font-size: 14px; }
+      .modal-body { padding: 10px; }
+      .modal-body img { max-height: 76vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="title-row">
+        <div>
+          <h1>沖縄商品カタログ</h1>
+          <p class="lead">一覧で価格を比較し、行クリックで事業者の商品画像を確認できます。</p>
+        </div>
+        <div class="stats" aria-label="集計">
+          <div class="stat"><strong>219</strong><span>商品</span></div>
+          <div class="stat"><strong>12</strong><span>事業者</span></div>
+          <div class="stat"><strong>14</strong><span>カテゴリ</span></div>
+        </div>
+      </div>
+      <div class="controls">
+        <select id="vendorFilter" aria-label="事業者名で絞り込み">
+          <option value="">すべての事業者</option>
+        </select>
+        <select id="sort" aria-label="並び替え">
+          <option value="default">標準順</option>
+          <option value="marginDesc">利幅率が高い順</option>
+          <option value="wholesaleAsc">卸価格が安い順</option>
+          <option value="retailDesc">参考上代が高い順</option>
+        </select>
+        <button id="clear">条件クリア</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="filter-band" aria-label="カテゴリフィルタ">
+      <div class="filter-title">カテゴリを複数選択できます</div>
+      <div class="filters" id="filters"></div>
+    </section>
+    <div class="result-line">
+      <span id="resultCount"></span>
+      <span>価格は税抜表示 / 行クリックで画像表示</span>
+    </div>
+    <section class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>商品名</th>
+            <th>事業者名</th>
+            <th>カテゴリ</th>
+            <th>卸価格</th>
+            <th>参考上代</th>
+            <th>利幅</th>
+            <th>送料</th>
+            <th>画像</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+    <section class="empty" id="empty">該当する商品がありません。</section>
+  </main>
+
+  <dialog id="imageDialog">
+    <div class="modal-head">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <button class="modal-close" id="modalClose">閉じる</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </dialog>
+
+  <script>
+    const PRODUCTS = [{"name": "JIAI._ タマヌオイルインクレイパック (沖縄県産クチャ)100g〜精油の香り配合〜", "vendor": "KYO MAKE-UP SALON 沖縄（キョウメイクアップサロン）", "category": "美容", "wholesale": 3108, "retail": 3960, "freeShipping": true, "image": "02_写真保管場/【商品画像】KYOメイクアップサロン商品リスト.jpg", "source": "10_KYOメイクアップサロン様（物販）_仕入れ管理シート.xlsx"}, {"name": "睡眠の質を高める「ひぷみん」琉球クヮンソウエキスゼリー(マンゴー味)｜1本16g×15本入り", "vendor": "KYO MAKE-UP SALON 沖縄（キョウメイクアップサロン）", "category": "美容", "wholesale": 3633, "retail": 5160, "freeShipping": true, "image": "02_写真保管場/【商品画像】KYOメイクアップサロン商品リスト.jpg", "source": "10_KYOメイクアップサロン様（物販）_仕入れ管理シート.xlsx"}, {"name": "遺言書キット（遺言書虎の巻ブック付き)", "vendor": "たけ事務", "category": "文具", "wholesale": 4300, "retail": 5000, "freeShipping": true, "image": "02_写真保管場/【商品画像】たけ事務商品リスト.jpg", "source": "11_たけ事務様（物販）_仕入れ管理シート.xlsx"}, {"name": "【4本セット】フリクションボールスイッチ　（フリクション0.5㎜＋油性0.7㎜）｜消せる3色0.5mm+消えない油性0.7mmを1本にまとめた新シリーズ", "vendor": "たけ事務", "category": "文具", "wholesale": 3400, "retail": 4000, "freeShipping": true, "image": "02_写真保管場/【商品画像】たけ事務商品リスト.jpg", "source": "11_たけ事務様（物販）_仕入れ管理シート.xlsx"}, {"name": "【4本セット】フリクションボールスイッチ　（フリクション0.38㎜＋油性0.5㎜）｜消せる3色0.38mm+消えない油性0.5mmを1本にまとめた新シリーズ", "vendor": "たけ事務", "category": "文具", "wholesale": 3400, "retail": 4000, "freeShipping": true, "image": "02_写真保管場/【商品画像】たけ事務商品リスト.jpg", "source": "11_たけ事務様（物販）_仕入れ管理シート.xlsx"}, {"name": "4人前｜送料無料！下地食品の八重山そばセット【製麺所直送 沖縄そば】", "vendor": "下地食品", "category": "食品", "wholesale": 3885, "retail": 4500, "freeShipping": true, "image": "02_写真保管場/【商品画像】下地食品商品リスト.jpg", "source": "12_下地食品様（物販）_仕入れ管理シート.xlsx"}, {"name": "8人前｜送料無料！下地食品の八重山そばセット【製麺所直送 沖縄そば】", "vendor": "下地食品", "category": "食品", "wholesale": 7350, "retail": 8600, "freeShipping": true, "image": "02_写真保管場/【商品画像】下地食品商品リスト.jpg", "source": "12_下地食品様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクアイマスク（サンリオ・ディズニー・ドラえもんシリーズ共通）", "vendor": "フトゥーロ", "category": "ヘルス", "wholesale": 3158, "retail": 4600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/20_シルクアイマスク_サンリオシリーズディズニーシリーズドラえもんシリーズ_シルクシュシュドラえもんシリーズディズニーシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクシュシュ（ドラえもん・ディズニーシリーズ共通）", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 1785, "retail": 2420, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/33_シルクシュシュ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクナイトフーディ（サンリオ・ディズニー・ドラえもんシリーズ共通）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3788, "retail": 5600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/21_ナイトフーディ_サンリオシリーズディズニーシリーズドラえもんシリーズ_ナイトキャップ_サンリオシリーズディズニーシリーズドラえもんシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクナイトキャップ 56cm（サンリオ・ドラえもん・ディズニーシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3486, "retail": 5120, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/21_ナイトフーディ_サンリオシリーズディズニーシリーズドラえもんシリーズ_ナイトキャップ_サンリオシリーズディズニーシリーズドラえもんシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクナイトキャップ 32cm（サンリオ・ドラえもん・ディズニーシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2730, "retail": 3920, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/21_ナイトフーディ_サンリオシリーズディズニーシリーズドラえもんシリーズ_ナイトキャップ_サンリオシリーズディズニーシリーズドラえもんシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ハローキティ　長袖パジャマ　シルク混（シルク55%・綿45%）", "vendor": "フトゥーロ", "category": "パジャマ", "wholesale": 2528, "retail": 3600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/22_ハローキティパジャマ長袖パジャマシルク混_シルク.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ハローキティ　長袖パジャマ　シルク100%", "vendor": "フトゥーロ", "category": "パジャマ", "wholesale": 3158, "retail": 4600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/22_ハローキティパジャマ長袖パジャマシルク混_シルク.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ハローキティ　半袖パジャマ　シルク混（シルク55%・綿45%）", "vendor": "フトゥーロ", "category": "パジャマ", "wholesale": 2339, "retail": 3300, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/23_ハローキティパジャマ半袖パジャマシルク混_シルク.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ハローキティ　半袖パジャマ　シルク100%", "vendor": "フトゥーロ", "category": "パジャマ", "wholesale": 2528, "retail": 3600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/23_ハローキティパジャマ半袖パジャマシルク混_シルク.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク枕カバー 43×63cm（サンリオ・ポケモン・ディズニー・ドラえもんシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3486, "retail": 5120, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク枕カバー 43×63cm（モンチッチシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3486, "retail": 5120, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク枕カバー 50×74cm（モンチッチシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3788, "retail": 5600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 150×210cm（サンリオ・ディズニー・ドラえもんシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2793, "retail": 4020, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/26_シルク掛け布団カバー_サンリオシリーズディズニーシリーズドラえもんシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 170×210cm（サンリオ・ディズニー・ドラえもんシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2982, "retail": 4320, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/26_シルク掛け布団カバー_サンリオシリーズディズニーシリーズドラえもんシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 190×210cm（サンリオ・ディズニー・ドラえもんシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3171, "retail": 4620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/26_シルク掛け布団カバー_サンリオシリーズディズニーシリーズドラえもんシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 150×210cm（ポケモンシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2352, "retail": 3320, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/27_シルク掛け布団カバー_ポケモンシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 170×210cm（ポケモンシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2478, "retail": 3520, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/27_シルク掛け布団カバー_ポケモンシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 190×210cm（ポケモンシリーズ）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2856, "retail": 4120, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/27_シルク掛け布団カバー_ポケモンシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク枕カバー 43×63cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2919, "retail": 4220, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク枕カバー 50×70cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3297, "retail": 4820, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクナイトキャップ 56cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2919, "retail": 4220, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/29_シルクナイトキャップ_シルク丸キャップ_シルクナイトフーディ_筒型ナイトフーディ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク丸キャップ", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2289, "retail": 3220, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/29_シルクナイトキャップ_シルク丸キャップ_シルクナイトフーディ_筒型ナイトフーディ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクナイトフーディ", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3297, "retail": 4820, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/29_シルクナイトキャップ_シルク丸キャップ_シルクナイトフーディ_筒型ナイトフーディ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "筒型ナイトフーディ", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 4116, "retail": 6120, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/29_シルクナイトキャップ_シルク丸キャップ_シルクナイトフーディ_筒型ナイトフーディ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク長袖パジャマ M・Lサイズ", "vendor": "フトゥーロ", "category": "パジャマ", "wholesale": 16275, "retail": 25420, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/30_シルク長袖パジャマ M・Lサイズ_シルク半袖パジャマ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク半袖パジャマ", "vendor": "フトゥーロ", "category": "パジャマ", "wholesale": 13125, "retail": 20420, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/30_シルク長袖パジャマ M・Lサイズ_シルク半袖パジャマ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクボックスシーツ 100×200cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 18291, "retail": 28620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/31_シルクボックスシーツ_シルク＋サイドポリボックスシーツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクボックスシーツ 120×200cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 20811, "retail": 32620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/31_シルクボックスシーツ_シルク＋サイドポリボックスシーツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクボックスシーツ 140×200cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 23331, "retail": 36620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/31_シルクボックスシーツ_シルク＋サイドポリボックスシーツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク＋サイドポリボックスシーツ 100×200×35cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 13125, "retail": 20420, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/31_シルクボックスシーツ_シルク＋サイドポリボックスシーツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク＋サイドポリボックスシーツ 120×200×35cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 17031, "retail": 26620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/31_シルクボックスシーツ_シルク＋サイドポリボックスシーツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク＋サイドポリボックスシーツ 140×200×35cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 19551, "retail": 30620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/31_シルクボックスシーツ_シルク＋サイドポリボックスシーツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルククッションカバー 45×45cm", "vendor": "フトゥーロ", "category": "インテリア雑貨", "wholesale": 2919, "retail": 4220, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/32_シルククッションカバー_シルクアイマスク.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクアイマスク", "vendor": "フトゥーロ", "category": "ヘルス", "wholesale": 2919, "retail": 4220, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/32_シルククッションカバー_シルクアイマスク.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクシュシュ 3.5cm", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 1533, "retail": 2020, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/33_シルクシュシュ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクシュシュ 1cm", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 1344, "retail": 1720, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/33_シルクシュシュ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 150×210cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 18291, "retail": 28620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/27_シルク掛け布団カバー_ポケモンシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 170×210cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 20811, "retail": 32620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/27_シルク掛け布団カバー_ポケモンシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク掛け布団カバー 190×210cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 23331, "retail": 36620, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/27_シルク掛け布団カバー_ポケモンシリーズ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクフェイスカバー", "vendor": "フトゥーロ", "category": "ヘルス", "wholesale": 2919, "retail": 4220, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/34_シルク掛け布団カバー_シルクフェイスカバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクブレンド　シルク枕カバー 43×63cm", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2213, "retail": 3100, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクブレンド　シルクシュシュ 3.5cm", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 1275, "retail": 1610, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/33_シルクシュシュ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクブレンド　丸型ナイトキャップ", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2087, "retail": 2900, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/35_シルクブレンドシルク枕カバー_シルクブレンドシルクシュシュ_シルクブレンド丸型ナイトキャップ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルク腹巻一重タイプ 195×135×20mm", "vendor": "フトゥーロ", "category": "インナーウェア", "wholesale": 2843, "retail": 4100, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/36_シルク腹巻一重タイプ_二重シルク腹巻_二重シルク×綿腹巻.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "二重シルク腹巻 195×135×20mm", "vendor": "フトゥーロ", "category": "インナーウェア", "wholesale": 2843, "retail": 4100, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/36_シルク腹巻一重タイプ_二重シルク腹巻_二重シルク×綿腹巻.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "二重シルク×綿腹巻 195×135×20mm", "vendor": "フトゥーロ", "category": "インナーウェア", "wholesale": 2843, "retail": 4100, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/36_シルク腹巻一重タイプ_二重シルク腹巻_二重シルク×綿腹巻.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ネックウォーマー 195×135×20mm", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 2843, "retail": 4100, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/37_ネックウォーマー_シルクレギンス.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクレギンス 140×220×30mm", "vendor": "フトゥーロ", "category": "インナーウェア", "wholesale": 4418, "retail": 6600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/37_ネックウォーマー_シルクレギンス.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ウールブレンドシルク靴下 95×215×45mm", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 2213, "retail": 3100, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/38_ウールブレンドシルク靴下_シルクプレミアム靴下.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "シルクプレミアム靴下 165×90×15mm", "vendor": "フトゥーロ", "category": "ファッション雑貨", "wholesale": 1898, "retail": 2600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/38_ウールブレンドシルク靴下_シルクプレミアム靴下.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ムーンウィンドウギフトボックス　シルク枕カバー 43×63cm", "vendor": "フトゥーロ", "category": "ギフト", "wholesale": 3108, "retail": 4520, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（シルクシリーズ）/28_シルク枕カバー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ライズアイスマジック 持続冷感キルトケット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2496, "retail": 4000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/01_ライズアイスマジック 持続冷感キルトケット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ライズアイスマジック 持続冷感枕パッド", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 936, "retail": 1500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/02_ライズアイスマジック 持続冷感枕パッド.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ライズアイスマジック 持続冷感敷パッド〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 1872, "retail": 3000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/03_ライズアイスマジック 持続冷感敷パッド【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス5.0 スペシャルハード〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 32760, "retail": 52500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/04_スリープオアシス クリーンマットレス5.0 スペシャルハード【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス5.0 スペシャルハード〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 28392, "retail": 45500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/79_スリープオアシス クリーンマットレス5.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス5.0 スペシャルハード〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 24024, "retail": 38500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/04_スリープオアシス クリーンマットレス5.0 スペシャルハード【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス コンディショニングマットレス V02", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 8424, "retail": 13500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/07_スリープオアシス コンディショニングマットレス V02.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "超爆睡 起き楽マットレス5.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 7488, "retail": 12000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/08_超爆睡 起き楽マットレス5.0【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆横向き寝サポート枕&掛布団3点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 39595, "retail": 63454, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆横向き寝サポート枕&掛布団3点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 33923, "retail": 54363, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆寝返りサポート枕&掛布団3点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 39595, "retail": 63454, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆寝返りサポート枕&掛布団3点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 33923, "retail": 54363, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス＆横向き寝サポート枕＆掛布団3点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 48104, "retail": 77090, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス＆横向き寝サポート枕＆掛布団3点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 42432, "retail": 68000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕&掛布団3点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 48104, "retail": 77090, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕&掛布団3点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 42432, "retail": 68000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス 腰サポートクッション V02", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3494, "retail": 5600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/17_スリープオアシス 腰サポートクッション V02.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス シートクッション5.0 V02", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3494, "retail": 5600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/18_スリープオアシス シートクッション5.0 V02.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "超気持ちいいコンパクトバスタオル 2枚セット", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 1872, "retail": 3000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/20_超気持ちいいコンパクトバスタオル.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "超気持ちいいコンパクトバスタオル", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 936, "retail": 1500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/20_超気持ちいいコンパクトバスタオル.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "RISE WARM Premium あったかボリューム衿付綿入り毛布", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2246, "retail": 3600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/21_RISE WARM Premium あったかボリューム衿付綿入り毛布.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "RISE WARM PLUS あったか衿付綿入り毛布", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 1660, "retail": 2660, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/22_RISE WARM PLUS あったか衿付綿入り毛布.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープラテックス マットレスパッド2.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 15600, "retail": 25000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/23_スリープラテックス マットレスパッド2.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープラテックス マットレスパッド2.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 12480, "retail": 20000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/24_スリープラテックス マットレスパッド2.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープラテックス マットレスパッド2.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 9360, "retail": 15000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/23_スリープラテックス マットレスパッド2.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ハイブリッドベッドマットレス20.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 48672, "retail": 78000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/26_スリープオアシス ハイブリッドベッドマットレス20.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ハイブリッドベッドマットレス20.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 41184, "retail": 66000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/27_スリープオアシス ハイブリッドベッドマットレス20.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ハイブリッドベッドマットレス20.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 29952, "retail": 48000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/26_スリープオアシス ハイブリッドベッドマットレス20.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープマジック ハイブリッドマットレス 8.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 53040, "retail": 85000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/29_スリープマジック ハイブリッドマットレス 8.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープマジック ハイブリッドマットレス 8.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 40560, "retail": 65000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/30_スリープマジック ハイブリッドマットレス 8.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープマジック ハイブリッドマットレス 8.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 31200, "retail": 50000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/29_スリープマジック ハイブリッドマットレス 8.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ナチュラルバランスダウン〖ダブルロング〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 15600, "retail": 25000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/32_ナチュラルバランスダウン【ダブルロング】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ナチュラルバランスダウン〖シングルロング〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 9360, "retail": 15000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/32_ナチュラルバランスダウン【ダブルロング】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&横向き寝サポート枕2点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 39595, "retail": 63454, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&横向き寝サポート枕2点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 33923, "retail": 54363, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 39595, "retail": 63454, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 33923, "retail": 54363, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/37_桑田真澄流 スリープオアシスハイブリッド動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆横向き寝サポート枕2点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 33923, "retail": 54363, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆横向き寝サポート枕2点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 28250, "retail": 45272, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆寝返りサポート枕2点セット〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 33923, "retail": 54363, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "青学駅伝式 スリープオアシス動的睡眠マットレス＆寝返りサポート枕2点セット〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 28250, "retail": 45272, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/41_青学駅伝式 スリープオアシス動的睡眠マットレス&寝返りサポート枕2点セット【シングル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ハイブリッドマットレス9.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 30420, "retail": 48750, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/50_スリープオアシス ハイブリッドマットレス9.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープラテックス 首肩フィットピローV03", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 6552, "retail": 10500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/43_スリープラテックス 首肩フィットピローV03.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティマットレス兼用敷布団 6.0 寝心地固め 〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 31200, "retail": 50000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/44_ゼログラビティマットレス兼用敷布団 6.0 寝心地固め 【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティマットレス兼用敷布団 6.0 寝心地固め 〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 24960, "retail": 40000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/45_ゼログラビティマットレス兼用敷布団 6.0 寝心地固め 【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ ハイブリッドマットレス兼用敷布団 7.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 59280, "retail": 95000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/46_ゼログラビティ ハイブリッドマットレス兼用敷布団 7.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ ハイブリッドマットレス兼用敷布団 7.0 〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 49920, "retail": 80000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/47_ゼログラビティ ハイブリッドマットレス兼用敷布団 7.0 【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ ハイブリッドマットレス兼用敷布団 7.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 40560, "retail": 65000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/46_ゼログラビティ ハイブリッドマットレス兼用敷布団 7.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス5.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 23868, "retail": 38250, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/78_スリープオアシス クリーンマットレス5.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ハイブリッドマットレス9.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 46800, "retail": 75000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/50_スリープオアシス ハイブリッドマットレス9.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ハイブリッドマットレス9.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 37440, "retail": 60000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/51_スリープオアシス ハイブリッドマットレス9.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ クールハイブリッドマットレス7.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 16598, "retail": 26600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/52_ゼログラビティ クールハイブリッドマットレス7.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ クールハイブリッドマットレス7.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 13978, "retail": 22400, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/53_ゼログラビティ クールハイブリッドマットレス7.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ クールハイブリッドマットレス7.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 11357, "retail": 18200, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/52_ゼログラビティ クールハイブリッドマットレス7.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ クールファイバースタンダードピロー", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2246, "retail": 3600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/55_ゼログラビティ クールファイバースタンダードピロー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ クールファイバーリラックスピロー", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2621, "retail": 4200, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/56_ゼログラビティ クールファイバーリラックスピロー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス スタンダードコンディショニングピロー", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3744, "retail": 6000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/57_スリープオアシス スタンダードコンディショニングピロー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス 横向き寝サポートピロー", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 6989, "retail": 11200, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/58_スリープオアシス 横向き寝サポートピロー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス 寝姿勢サポートピロー", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2621, "retail": 4200, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/59_スリープオアシス 寝姿勢サポートピロー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス 首元リラックスピロー", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3744, "retail": 6000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/60_スリープオアシス 首元リラックスピロー.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ マットレス兼用敷布団 6.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 28080, "retail": 45000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/61_ゼログラビティ マットレス兼用敷布団 6.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ マットレス兼用敷布団 6.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 21840, "retail": 35000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/62_ゼログラビティ マットレス兼用敷布団 6.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "ゼログラビティ ベッドマットレス兼用極厚敷布団 12.5〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 40560, "retail": 65000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/63_ゼログラビティ ベッドマットレス兼用極厚敷布団 12.5【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープマジック マットレス 7.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 16848, "retail": 27000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/64_スリープマジック マットレス 7.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープマジック マットレス 7.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 14040, "retail": 22500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/65_スリープマジック マットレス 7.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープマジック マットレス 7.0〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 11232, "retail": 18000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/64_スリープマジック マットレス 7.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "〖NEWカラー〗スリープマジック 極厚マットレス 14.0 ダブル", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 29484, "retail": 47250, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/67_【NEWカラー】スリープマジック 極厚マットレス 14.0 ダブル.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "〖NEWカラー〗スリープマジック 極厚マットレス 14.0 セミダブル", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 22464, "retail": 36000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/68_【NEWカラー】スリープマジック 極厚マットレス 14.0 セミダブル.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "〖NEWカラー〗スリープマジック 極厚マットレス 14.0 シングル", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 18252, "retail": 29250, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/69_【NEWカラー】スリープマジック 極厚マットレス 14.0 シングル.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス 寝返りサポートピローV03", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 6989, "retail": 11200, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/70_スリープオアシス 寝返りサポートピローV03.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス コンディショニング マットレス", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 13728, "retail": 22000, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/71_スリープオアシス コンディショニング マットレス.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ライト マットレス〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 14153, "retail": 22681, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/72_スリープオアシス ライト マットレス【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ライト マットレス〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 11317, "retail": 18136, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/72_スリープオアシス ライト マットレス【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス ライト マットレス〖シングル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 10177, "retail": 16309, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/72_スリープオアシス ライト マットレス【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス コンディショニングパッド 4つ折り", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 8424, "retail": 13500, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/75_スリープオアシス コンディショニングパッド 4つ折り.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス専用カバー〖シングル〗 (5cm 洗い替え用）", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 6178, "retail": 9900, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/76_スリープオアシス クリーンマットレス専用カバー【シングル】 (5cm 洗い替え用).jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "〖OUTLET〗 UCHINOの極ふわタオル リラックスTシャツ", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 2246, "retail": 3600, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/77_【OUTLET】 UCHINOの極ふわタオル リラックスTシャツ.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス5.0〖ダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 34476, "retail": 55250, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/78_スリープオアシス クリーンマットレス5.0【ダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス クリーンマットレス5.0〖セミダブル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 29172, "retail": 46750, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/79_スリープオアシス クリーンマットレス5.0【セミダブル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス モバイルパッド〖T.LEAGUEモデル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 3332, "retail": 5340, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/80_スリープオアシス モバイルパッド【T.LEAGUEモデル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "スリープオアシス コンディショニングパッド〖T.LEAGUEモデル〗", "vendor": "フトゥーロ", "category": "寝具", "wholesale": 6327, "retail": 10140, "freeShipping": true, "image": "02_写真保管場/【商品画像】フトゥーロ 商品リスト（寝具シリーズ）/81_スリープオアシス コンディショニングパッド【T.LEAGUEモデル】.jpg", "source": "1_フトゥーロ様（物販）_仕入れ管理シート.xlsx"}, {"name": "RYUKAのアンダカシー うま塩 30g×1個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 333, "retail": 403, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "【初めての方向け】RYUKAのアンダカシー うま塩 30g×4個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 1333, "retail": 1612, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "RYUKAのアンダカシー うま塩 30g×10個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 3333, "retail": 4030, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "RYUKAのアンダカシー うま塩 30g×20個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 6605, "retail": 8060, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "RYUKAのアンダカシー うま塩 30g×30個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 9817, "retail": 12090, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "RYUKAのアンダカシー うま塩 30g×40個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 12968, "retail": 16120, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "RYUKAのアンダカシー うま塩 30g×50個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 16059, "retail": 20150, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー 塩味 70g×1個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 372, "retail": 450, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "【初めての方向け】アンダカシー 塩味 70g×4個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 1487, "retail": 1800, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー 塩味 70g×10個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 3718, "retail": 4500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー 塩味 70g×20個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 7368, "retail": 9000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー 塩味 70g×30個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 10951, "retail": 13500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー 塩味 70g×40個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 14466, "retail": 18000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー 塩味 70g×50個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 17914, "retail": 22500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー タコス味 70g×1個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 372, "retail": 450, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "【初めての方向け】アンダカシー タコス味 70g×4個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 1487, "retail": 1800, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  タコス味 70g×10個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 3718, "retail": 4500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  タコス味 70g×20個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 7368, "retail": 9000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  タコス味 70g×30個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 10951, "retail": 13500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  タコス味 70g×40個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 14466, "retail": 18000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  タコス味 70g×50個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 17914, "retail": 22500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー レモンシークワーサー味 50g×1個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 284, "retail": 450, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "【初めての方向け】レモンシークワーサー味 70g×4個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 1487, "retail": 1800, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  レモンシークワーサー味 70g×10個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 3718, "retail": 4500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  レモンシークワーサー味 70g×20個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 7368, "retail": 9000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  レモンシークワーサー味 70g×30個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 10951, "retail": 13500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  レモンシークワーサー味 70g×40個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 14466, "retail": 18000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  レモンシークワーサー味 70g×50個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 17914, "retail": 22500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー やみつき激わさび味 50g×1個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 284, "retail": 450, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "【初めての方向け】やみつき激わさび味 70g×4個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 1487, "retail": 1800, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  やみつき激わさび味 70g×10個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 3718, "retail": 4500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  やみつき激わさび味 70g×20個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 7368, "retail": 9000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  やみつき激わさび味 70g×30個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 10951, "retail": 13500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  やみつき激わさび味 70g×40個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 14466, "retail": 18000, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "アンダカシー  やみつき激わさび味 70g×50個", "vendor": "株式会社琉華", "category": "お菓子", "wholesale": 17914, "retail": 22500, "freeShipping": true, "image": "02_写真保管場/【商品画像】RYUKAのアンダカシー 商品リスト.jpg", "source": "2_株式会社琉華様（物販）_仕入れ管理シート.xlsx"}, {"name": "のぼりや スクエア ジャーマンケーキ 1個", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 4198, "retail": 5050, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "のぼりや スクエア ジャーマンケーキ 2個", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 6629, "retail": 8300, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "のぼりや ジャーマンケーキ 1962 ギフトBOX 48g×5個入り", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 3556, "retail": 4450, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "のぼりや ジャーマンケーキ 1962 ギフトBOX 48g×5個入り×2セット", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 5341, "retail": 7600, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "のぼりや黒糖ケーキ（パウンドケーキ）1本(380g)", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 2775, "retail": 3450, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "のぼりや黒糖ケーキ（パウンドケーキ）2本(380g×2)", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 4164, "retail": 5300, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "タルト/パインチーズケーキ(のぼりや製菓)", "vendor": "のぼりや製菓", "category": "お菓子", "wholesale": 4186, "retail": 5000, "freeShipping": true, "image": "02_写真保管場/【商品画像】のぼりや製菓 商品リスト.jpg", "source": "3_のぼりや製菓様（物販）_仕入れ管理シート.xlsx"}, {"name": "【先行予約】【10セットのみ】6月上旬～中旬発送 沖縄県産パッションフルーツ 1kg｜家庭用｜農薬不使用｜送料込み", "vendor": "ナチュラルパッション沖縄", "category": "農産物", "wholesale": 3586, "retail": 4500, "freeShipping": true, "image": "02_写真保管場/【商品画像】ナチュラルパッション沖縄 商品リスト.jpg", "source": "4_ナチュラルパッション沖縄様（物販）_仕入れ管理シート.xlsx"}, {"name": "【先行予約】【10セットのみ】6月上旬～中旬発送 沖縄県産パッションフルーツ 2kg｜家庭用｜農薬不使用｜送料込み", "vendor": "ナチュラルパッション沖縄", "category": "農産物", "wholesale": 6446, "retail": 8100, "freeShipping": true, "image": "02_写真保管場/【商品画像】ナチュラルパッション沖縄 商品リスト.jpg", "source": "4_ナチュラルパッション沖縄様（物販）_仕入れ管理シート.xlsx"}, {"name": "【家庭用】【20セットのみ】7月上旬～中旬発送 沖縄県産マンゴー 1kg｜送料込み", "vendor": "かんな農園", "category": "農産物", "wholesale": 3780, "retail": 6500, "freeShipping": true, "image": "02_写真保管場/【商品画像】かんな農園 商品リスト .jpg", "source": "5_かんな農園様（物販）_仕入れ管理シート.xlsx"}, {"name": "【家庭用】【20セットのみ】7月上旬～中旬発送 沖縄県産マンゴー 2kg｜送料込み", "vendor": "かんな農園", "category": "農産物", "wholesale": 6048, "retail": 11000, "freeShipping": true, "image": "02_写真保管場/【商品画像】かんな農園 商品リスト .jpg", "source": "5_かんな農園様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAIバナナジェラート×6個 沖縄県産100%｜フードレスキュー", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 4139, "retail": 5980, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAIマンゴージェラート×6個 沖縄県産100%｜フードレスキュー", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 4139, "retail": 5980, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAIパイナップルジェラート×6個 沖縄県産100%｜フードレスキュー", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 4139, "retail": 5980, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAIバナナジェラート×12個 沖縄県産100%｜フードレスキュー", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 6485, "retail": 9800, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAIマンゴージェラート×12個 沖縄県産100%｜フードレスキュー", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 6485, "retail": 9800, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAIパイナップルジェラート×12個 沖縄県産100%｜フードレスキュー", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 6485, "retail": 9800, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAI沖縄県産100%ジェラート 3種類セット(計6個)｜マンゴー2個、パイナップル2個、バナナ2個", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 4139, "retail": 5980, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAI沖縄県産100%ジェラート 3種類セット(計12個)｜マンゴー4個、パイナップル4個、バナナ4個", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 6485, "retail": 9800, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "【送料込】MOTTAINAI沖縄県産100%ジェラート 3種類セット(計18個)｜マンゴー6個、パイナップル6個、バナナ6個", "vendor": "Digital Halusa(デジはる)協同組合", "category": "飲食", "wholesale": 8772, "retail": 12800, "freeShipping": true, "image": "02_写真保管場/【商品画像】Digital Halusa(デジはる)協同組合 商品リスト.jpg", "source": "6_Digital Halusa(デジはる)協同組合様（物販）_仕入れ管理シート.xlsx"}, {"name": "まるごとシークワーサー100 3本セット", "vendor": "喜島商店", "category": "飲料", "wholesale": 3666, "retail": 5011, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "まるごとシークワーサー100 5本セット", "vendor": "喜島商店", "category": "飲料", "wholesale": 5461, "retail": 7564, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "まるごとシークワーサー100 10本セット", "vendor": "喜島商店", "category": "飲料", "wholesale": 9810, "retail": 12727, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "まるごとシークワーサー100 20本セット", "vendor": "喜島商店", "category": "飲料", "wholesale": 18823, "retail": 25182, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "よしおばぁの島らっきょう 塩200g", "vendor": "喜島商店", "category": "飲食", "wholesale": 2782, "retail": 3818, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "よしおばぁの島らっきょう キムチ200g", "vendor": "喜島商店", "category": "飲食", "wholesale": 2782, "retail": 3818, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "よしおばぁの島らっきょう かつお節醤油", "vendor": "喜島商店", "category": "飲食", "wholesale": 2782, "retail": 3818, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "よしおばぁの島らっきょう カルテット4種200g", "vendor": "喜島商店", "category": "飲食", "wholesale": 3245, "retail": 4091, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "シークワーサー原液とアンダカシーのセット", "vendor": "喜島商店", "category": "飲食", "wholesale": 2920, "retail": 3164, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "塩パインアイス 4ℓ", "vendor": "喜島商店", "category": "飲食", "wholesale": 7984, "retail": 11818, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "がんじゅう堂の沖縄そば 贅沢セット 2人前", "vendor": "喜島商店", "category": "飲食", "wholesale": 5563, "retail": 6091, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "天然もずく 3セット", "vendor": "喜島商店", "category": "飲食", "wholesale": 2743, "retail": 3591, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "天然もずく 6セット", "vendor": "喜島商店", "category": "飲食", "wholesale": 4094, "retail": 5409, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "海風塩もずく 3セット", "vendor": "喜島商店", "category": "飲食", "wholesale": 2407, "retail": 3091, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "海風塩もずく 6セット", "vendor": "喜島商店", "category": "飲食", "wholesale": 3702, "retail": 6182, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "沖縄県産アオサ25g 3セット", "vendor": "喜島商店", "category": "飲食", "wholesale": 1908, "retail": 3518, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "沖縄県産アオサ25g 6セット", "vendor": "喜島商店", "category": "飲食", "wholesale": 3909, "retail": 6364, "freeShipping": true, "image": "02_写真保管場/【商品画像】喜島商店 商品リスト.jpg", "source": "7_喜島商店様（物販）_仕入れ管理シート.xlsx"}, {"name": "ブレンドコーヒー2種＋ドリップバッグ1個セット", "vendor": "プレイズコーヒー", "category": "飲料", "wholesale": 2572, "retail": 3500, "freeShipping": true, "image": "02_写真保管場/【商品画像】プレイズコーヒー 商品リスト.jpg", "source": "8_プレイズコーヒー様（物販）_仕入れ管理シート.xlsx"}, {"name": "スペシャルティーコーヒー2種＋ドリップバッグ4個セット", "vendor": "プレイズコーヒー", "category": "飲料", "wholesale": 3602, "retail": 4900, "freeShipping": true, "image": "02_写真保管場/【商品画像】プレイズコーヒー 商品リスト.jpg", "source": "8_プレイズコーヒー様（物販）_仕入れ管理シート.xlsx"}, {"name": "スペシャルティーコーヒー3種＆ドリップバッグ6個（ギフトBOX入り）", "vendor": "プレイズコーヒー", "category": "飲料", "wholesale": 7350, "retail": 10000, "freeShipping": true, "image": "02_写真保管場/【商品画像】プレイズコーヒー 商品リスト.jpg", "source": "8_プレイズコーヒー様（物販）_仕入れ管理シート.xlsx"}, {"name": "サントグラノス ブレンドコーヒー200g French roast（深煎り）", "vendor": "サントグラノス", "category": "飲料", "wholesale": 2762, "retail": 3380, "freeShipping": true, "image": "02_写真保管場/【商品画像】サントグラノス(コーヒー) 商品リスト.jpg", "source": "9_サントグラノス様（物販）_仕入れ管理シート.xlsx"}, {"name": "サントグラノス ブレンドコーヒー200g City roast（中煎り）", "vendor": "サントグラノス", "category": "飲料", "wholesale": 2762, "retail": 3380, "freeShipping": true, "image": "02_写真保管場/【商品画像】サントグラノス(コーヒー) 商品リスト.jpg", "source": "9_サントグラノス様（物販）_仕入れ管理シート.xlsx"}, {"name": "サントグラノス ブレンドコーヒー200g Medium（浅煎り）", "vendor": "サントグラノス", "category": "飲料", "wholesale": 2762, "retail": 3380, "freeShipping": true, "image": "02_写真保管場/【商品画像】サントグラノス(コーヒー) 商品リスト.jpg", "source": "9_サントグラノス様（物販）_仕入れ管理シート.xlsx"}, {"name": "サントグラノス お任せ3pack set（100g×3種）", "vendor": "サントグラノス", "category": "飲料", "wholesale": 3675, "retail": 4630, "freeShipping": true, "image": "02_写真保管場/【商品画像】サントグラノス(コーヒー) 商品リスト.jpg", "source": "9_サントグラノス様（物販）_仕入れ管理シート.xlsx"}, {"name": "サントグラノス ドリップパック（15袋入り）", "vendor": "サントグラノス", "category": "飲料", "wholesale": 3496, "retail": 4380, "freeShipping": true, "image": "02_写真保管場/【商品画像】サントグラノス(コーヒー) 商品リスト.jpg", "source": "9_サントグラノス様（物販）_仕入れ管理シート.xlsx"}];
+    const yen = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 });
+    const state = { vendor: '', categories: new Set(), sort: 'default' };
+    const categories = [...new Set(PRODUCTS.map(item => item.category))].sort((a, b) => a.localeCompare(b, 'ja'));
+    const vendors = [...new Set(PRODUCTS.map(item => item.vendor))].sort((a, b) => a.localeCompare(b, 'ja'));
+
+    const filters = document.getElementById('filters');
+    const rows = document.getElementById('rows');
+    const resultCount = document.getElementById('resultCount');
+    const empty = document.getElementById('empty');
+    const dialog = document.getElementById('imageDialog');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+
+    function margin(item) {
+      if (!item.retail) return 0;
+      return (item.retail - item.wholesale) / item.retail;
+    }
+
+    function formatMargin(item) {
+      return `${Math.round(margin(item) * 1000) / 10}%`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+
+    function row(item, index) {
+      return `<tr data-index="${index}">
+        <td class="name-cell">${escapeHtml(item.name)}</td>
+        <td class="vendor-cell">${escapeHtml(item.vendor)}</td>
+        <td><span class="category-pill">${escapeHtml(item.category)}</span></td>
+        <td class="num">${yen.format(item.wholesale)}</td>
+        <td class="num">${yen.format(item.retail)}</td>
+        <td class="num margin">${formatMargin(item)}</td>
+        <td>${item.freeShipping ? '<span class="badge">送料無料</span>' : ''}</td>
+        <td><button class="image-link" data-index="${index}" type="button">画像</button></td>
+      </tr>`;
+    }
+
+    function renderFilters() {
+      filters.innerHTML = categories.map(category => `<label class="chip">
+        <input type="checkbox" value="${escapeHtml(category)}">
+        <span>${escapeHtml(category)}</span>
+      </label>`).join('');
+      filters.addEventListener('change', event => {
+        if (event.target.matches('input[type="checkbox"]')) {
+          state.categories = new Set([...filters.querySelectorAll('input:checked')].map(input => input.value));
+          render();
+        }
+      });
+    }
+
+    function renderVendorOptions() {
+      const select = document.getElementById('vendorFilter');
+      select.innerHTML = '<option value="">すべての事業者</option>' + vendors.map(vendor =>
+        `<option value="${escapeHtml(vendor)}">${escapeHtml(vendor)}</option>`
+      ).join('');
+    }
+
+    function filteredProducts() {
+      let list = PRODUCTS.map((item, index) => ({ item, index })).filter(entry => {
+        const item = entry.item;
+        const categoryOk = state.categories.size === 0 || state.categories.has(item.category);
+        const vendorOk = !state.vendor || item.vendor === state.vendor;
+        return categoryOk && vendorOk;
+      });
+      list = [...list];
+      if (state.sort === 'marginDesc') list.sort((a, b) => margin(b.item) - margin(a.item));
+      if (state.sort === 'wholesaleAsc') list.sort((a, b) => a.item.wholesale - b.item.wholesale);
+      if (state.sort === 'retailDesc') list.sort((a, b) => b.item.retail - a.item.retail);
+      return list;
+    }
+
+    function render() {
+      const list = filteredProducts();
+      resultCount.textContent = `${list.length} / ${PRODUCTS.length} 件を表示`;
+      rows.innerHTML = list.map(entry => row(entry.item, entry.index)).join('');
+      empty.style.display = list.length ? 'none' : 'block';
+    }
+
+    function openImage(index) {
+      const item = PRODUCTS[index];
+      modalTitle.textContent = `${item.vendor} / ${item.name}`;
+      modalBody.innerHTML = item.image
+        ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}">`
+        : '<p>画像が登録されていません。</p>';
+      dialog.showModal();
+    }
+
+    rows.addEventListener('click', event => {
+      const tr = event.target.closest('tr[data-index]');
+      if (tr) openImage(Number(tr.dataset.index));
+    });
+    document.getElementById('vendorFilter').addEventListener('change', event => {
+      state.vendor = event.target.value;
+      render();
+    });
+    document.getElementById('sort').addEventListener('change', event => {
+      state.sort = event.target.value;
+      render();
+    });
+    document.getElementById('clear').addEventListener('click', () => {
+      state.vendor = '';
+      state.categories.clear();
+      state.sort = 'default';
+      document.getElementById('vendorFilter').value = '';
+      document.getElementById('sort').value = 'default';
+      filters.querySelectorAll('input').forEach(input => input.checked = false);
+      render();
+    });
+    document.getElementById('modalClose').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => {
+      if (event.target === dialog) dialog.close();
+    });
+
+    renderVendorOptions();
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
